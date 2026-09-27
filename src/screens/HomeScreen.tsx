@@ -7,13 +7,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fonts } from '../theme/fonts';
 import ProgressBar from '../components/ProgressBar';
-import LessonCard from '../components/LessonCard';
+import LevelCard from '../components/LevelCard';
 import { CURRICULUM, TOTAL_LESSONS } from '../data/curriculum';
 
 export default function HomeScreen({ navigation }: any) {
     const { colors } = useTheme();
     const [progressData, setProgressData] = useState<Record<string, any>>({});
-    const [completedCount, setCompletedCount] = useState(0);
+    const [completedTotal, setCompletedTotal] = useState(0);
 
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const slideAnim = useRef(new Animated.Value(30)).current;
@@ -34,7 +34,7 @@ export default function HomeScreen({ navigation }: any) {
                         const progress = JSON.parse(existingData);
                         setProgressData(progress);
                         const count = Object.values(progress).filter((item: any) => item.completed).length;
-                        setCompletedCount(count);
+                        setCompletedTotal(count);
                     }
                 } catch (error) {
                     console.error('Lỗi khi tải tiến trình:', error);
@@ -44,7 +44,12 @@ export default function HomeScreen({ navigation }: any) {
         }, [])
     );
 
-    const progressPercentage = TOTAL_LESSONS > 0 ? (completedCount / TOTAL_LESSONS) * 100 : 0;
+    const globalProgress = TOTAL_LESSONS > 0 ? (completedTotal / TOTAL_LESSONS) * 100 : 0;
+
+    // Hàm tính số bài đã hoàn thành trong 1 Cấp độ
+    const getLevelCompletedCount = (lessons: any[]) => {
+        return lessons.filter(lesson => progressData[lesson.id]?.completed).length;
+    };
 
     return (
         <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
@@ -60,33 +65,30 @@ export default function HomeScreen({ navigation }: any) {
                     <LinearGradient colors={['#4CAF50', '#2E7D32']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.progressCard}>
                         <View style={styles.progressHeader}>
                             <View>
-                                <Text style={styles.progressTitle}>Tiến độ của bác</Text>
-                                <Text style={styles.progressSubtitle}>Đã hoàn thành {completedCount}/{TOTAL_LESSONS} bài học</Text>
+                                <Text style={styles.progressTitle}>Tiến độ tổng thể</Text>
+                                <Text style={styles.progressSubtitle}>Đã hoàn thành {completedTotal}/{TOTAL_LESSONS} bài học</Text>
                             </View>
                             <View style={styles.badgeContainer}>
                                 <Award color="#2E7D32" size={28} />
                             </View>
                         </View>
-                        <ProgressBar progress={progressPercentage} trackColor="rgba(255,255,255,0.3)" fillColor="#FFFFFF" />
+                        <ProgressBar progress={globalProgress} trackColor="rgba(255,255,255,0.3)" fillColor="#FFFFFF" />
                     </LinearGradient>
 
-                    {CURRICULUM.map((level) => (
-                        <View key={level.levelId} style={styles.levelSection}>
-                            <Text style={[styles.levelTitle, { color: colors.text }]}>{level.levelTitle}</Text>
-                            <View style={styles.listContainer}>
-                                {level.lessons.map((lesson) => (
-                                    <LessonCard
-                                        key={lesson.id}
-                                        title={lesson.title}
-                                        subtitle={lesson.subtitle}
-                                        Icon={lesson.Icon}
-                                        isCompleted={progressData[lesson.id]?.completed}
-                                        onPress={() => navigation.navigate('Lesson', { lessonId: lesson.id, title: lesson.title })}
-                                    />
-                                ))}
-                            </View>
-                        </View>
-                    ))}
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Các Cấp Độ Học Tập</Text>
+
+                    <View>
+                        {CURRICULUM.map((level) => (
+                            <LevelCard
+                                key={level.levelId}
+                                title={level.levelTitle}
+                                description={level.description}
+                                completedLessons={getLevelCompletedCount(level.lessons)}
+                                totalLessons={level.lessons.length}
+                                onPress={() => navigation.navigate('LevelDetail', { levelId: level.levelId })}
+                            />
+                        ))}
+                    </View>
                 </Animated.View>
 
             </ScrollView>
@@ -100,15 +102,10 @@ const styles = StyleSheet.create({
     header: { marginBottom: 24 },
     greeting: { fontFamily: fonts.medium, fontSize: 20, marginBottom: 4 },
     appName: { fontFamily: fonts.bold, fontSize: 32 },
-    progressCard: {
-        padding: 20, borderRadius: 20, marginBottom: 32,
-        shadowColor: '#2E7D32', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8,
-    },
+    progressCard: { padding: 20, borderRadius: 20, marginBottom: 32, shadowColor: '#2E7D32', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8 },
     progressHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
     progressTitle: { fontFamily: fonts.bold, fontSize: 20, color: '#FFFFFF', marginBottom: 4 },
     progressSubtitle: { fontFamily: fonts.medium, fontSize: 14, color: '#E8F5E9' },
     badgeContainer: { backgroundColor: '#FFFFFF', padding: 10, borderRadius: 16 },
-    levelSection: { marginBottom: 32 },
-    levelTitle: { fontFamily: fonts.bold, fontSize: 20, marginBottom: 16 },
-    listContainer: { gap: 12 },
+    sectionTitle: { fontFamily: fonts.bold, fontSize: 22, marginBottom: 16 },
 });

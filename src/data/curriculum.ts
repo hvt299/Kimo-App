@@ -1,36 +1,8 @@
 import {
-    Pointer,
-    Smartphone,
-    Power,
-    BatteryCharging,
-    Volume2,
-    Wifi,
-    Phone,
-    Users,
-    MessageCircle,
-    Mic,
-    Camera,
-    Image as ImageIcon,
-    MapPin,
-    Search,
-    Play,
-    Settings,
-    Bell,
-    ShieldCheck,
-    Download,
-    Trash2,
-    Share2,
-    Copy,
-    Keyboard,
-    Lock,
-    Eye,
-    Bluetooth,
-    Sun,
-    Flashlight,
-    Navigation,
-    Contact,
-    Video,
-    MoreHorizontal,
+    Pointer, Smartphone, Power, BatteryCharging, Volume2, Wifi, Phone, Users,
+    MessageCircle, Mic, Camera, Image as ImageIcon, MapPin, Search, Play, Settings,
+    Bell, ShieldCheck, Download, Trash2, Share2, Copy, Keyboard, Lock, Eye, Bluetooth,
+    Sun, Flashlight, Navigation, Contact, Video, MoreHorizontal
 } from 'lucide-react-native';
 
 export interface LessonPreview {
@@ -43,6 +15,7 @@ export interface LessonPreview {
 export interface Level {
     levelId: string;
     levelTitle: string;
+    description: string;
     lessons: LessonPreview[];
 }
 
@@ -53,6 +26,7 @@ export const CURRICULUM: Level[] = [
     {
         levelId: 'level_0',
         levelTitle: 'Level 0: Làm quen với điện thoại cảm ứng',
+        description: 'Bắt đầu từ những nút bấm và thao tác chạm, vuốt cơ bản nhất',
         lessons: [
             {
                 id: 'hardware',
@@ -123,6 +97,7 @@ export const CURRICULUM: Level[] = [
     {
         levelId: 'level_1',
         levelTitle: 'Level 1: Những thao tác cơ bản hằng ngày',
+        description: 'Quản lý màn hình chính, thông báo, Wi-Fi và bàn phím',
         lessons: [
             {
                 id: 'home_screen',
@@ -193,6 +168,7 @@ export const CURRICULUM: Level[] = [
     {
         levelId: 'level_2',
         levelTitle: 'Level 2: Nghe gọi & Danh bạ',
+        description: 'Cách lưu số con cháu và gọi điện thoại hằng ngày',
         lessons: [
             {
                 id: 'call_basic',
@@ -263,6 +239,7 @@ export const CURRICULUM: Level[] = [
     {
         levelId: 'level_3',
         levelTitle: 'Level 3: Nhắn tin & Zalo',
+        description: 'Nhắn tin, gọi video và gửi ảnh cho gia đình qua Zalo',
         lessons: [
             {
                 id: 'zalo_open',
@@ -333,6 +310,7 @@ export const CURRICULUM: Level[] = [
     {
         levelId: 'level_4',
         levelTitle: 'Level 4: Camera & Lưu giữ kỷ niệm',
+        description: 'Chụp ảnh, quay video và xem lại kỷ niệm trong thư viện',
         lessons: [
             {
                 id: 'camera_open',
@@ -403,6 +381,7 @@ export const CURRICULUM: Level[] = [
     {
         levelId: 'level_5',
         levelTitle: 'Level 5: Xem video & Tìm thông tin trên YouTube',
+        description: 'Tìm kiếm video, bài hát và chương trình giải trí',
         lessons: [
             {
                 id: 'youtube_open',
@@ -473,6 +452,7 @@ export const CURRICULUM: Level[] = [
     {
         levelId: 'level_6',
         levelTitle: 'Level 6: Bản đồ & Đi lại',
+        description: 'Tìm địa điểm, xem đường đi và chia sẻ vị trí',
         lessons: [
             {
                 id: 'maps_open',
@@ -543,6 +523,7 @@ export const CURRICULUM: Level[] = [
     {
         levelId: 'level_7',
         levelTitle: 'Level 7: Cài đặt & Quản lý điện thoại',
+        description: 'Cài đặt chữ to, nhạc chuông và quản lý ứng dụng',
         lessons: [
             {
                 id: 'settings_basic',
@@ -613,6 +594,7 @@ export const CURRICULUM: Level[] = [
     {
         levelId: 'level_8',
         levelTitle: 'Level 8: An toàn & Tránh lừa đảo trên điện thoại',
+        description: 'Nhận biết lừa đảo, tin nhắn giả mạo và bảo vệ thông tin',
         lessons: [
             {
                 id: 'screen_lock_security',
@@ -683,6 +665,7 @@ export const CURRICULUM: Level[] = [
     {
         levelId: 'level_9',
         levelTitle: 'Level 9: Thực hành sử dụng điện thoại trong cuộc sống',
+        description: 'Thực hành tổng hợp các kỹ năng đã học vào thực tế',
         lessons: [
             {
                 id: 'daily_call',
