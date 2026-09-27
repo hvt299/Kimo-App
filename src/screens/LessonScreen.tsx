@@ -6,6 +6,9 @@ import { ArrowLeft, PlayCircle } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { fonts } from '../theme/fonts';
 
+import KimoButton from '../components/KimoButton';
+import KimoMascot from '../components/KimoMascot';
+
 export default function LessonScreen({ navigation, route }: any) {
     const { colors } = useTheme();
     const { lessonId, title } = route.params;
@@ -15,17 +18,8 @@ export default function LessonScreen({ navigation, route }: any) {
 
     useEffect(() => {
         Animated.sequence([
-            Animated.timing(opacityAnim, {
-                toValue: 1,
-                duration: 300,
-                useNativeDriver: true,
-            }),
-            Animated.spring(scaleAnim, {
-                toValue: 1,
-                friction: 5,
-                tension: 40,
-                useNativeDriver: true,
-            })
+            Animated.timing(opacityAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
+            Animated.spring(scaleAnim, { toValue: 1, friction: 5, tension: 40, useNativeDriver: true })
         ]).start();
     }, []);
 
@@ -54,10 +48,9 @@ export default function LessonScreen({ navigation, route }: any) {
                 </Animated.View>
 
                 <Text style={[styles.lessonTitle, { color: colors.text }]}>{title}</Text>
-                <Text style={styles.lessonDescription}>
-                    Bài học này sẽ hướng dẫn bác các thao tác cơ bản nhất.
-                    Cứ thong thả làm theo hướng dẫn trên màn hình nhé.
-                </Text>
+
+                {/* Dùng KimoMascot ở đây */}
+                <KimoMascot message="Bài học này sẽ hướng dẫn bác các thao tác cơ bản nhất. Cứ thong thả làm theo hướng dẫn trên màn hình nhé!" />
 
                 <View style={[styles.infoCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                     <Text style={[styles.infoText, { color: colors.text }]}>- Không sợ bấm sai</Text>
@@ -67,19 +60,11 @@ export default function LessonScreen({ navigation, route }: any) {
             </Animated.View>
 
             <Animated.View style={[styles.footer, { opacity: opacityAnim }]}>
-                <TouchableOpacity
-                    activeOpacity={0.8}
+                {/* Dùng KimoButton cực kỳ gọn gàng */}
+                <KimoButton
+                    title="Bắt đầu học ngay"
                     onPress={() => console.log('Bắt đầu bài: ', lessonId)}
-                >
-                    <LinearGradient
-                        colors={['#4CAF50', '#2E7D32']}
-                        style={styles.startButton}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                    >
-                        <Text style={styles.startButtonText}>Bắt đầu học ngay</Text>
-                    </LinearGradient>
-                </TouchableOpacity>
+                />
             </Animated.View>
 
         </SafeAreaView>
@@ -90,48 +75,15 @@ const styles = StyleSheet.create({
     safeArea: { flex: 1 },
     header: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 8 },
     backButton: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 1,
+        width: 48, height: 48, borderRadius: 24, justifyContent: 'center', alignItems: 'center', borderWidth: 1,
     },
-    content: { flex: 1, padding: 24, alignItems: 'center', justifyContent: 'center' },
+    content: { flex: 1, padding: 24, justifyContent: 'center' },
     iconContainer: {
-        width: 96,
-        height: 96,
-        borderRadius: 32,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 24,
-        shadowColor: '#2E7D32',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.3,
-        shadowRadius: 16,
-        elevation: 8,
+        width: 96, height: 96, borderRadius: 32, justifyContent: 'center', alignItems: 'center', marginBottom: 24, alignSelf: 'center',
+        shadowColor: '#2E7D32', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 16, elevation: 8,
     },
-    lessonTitle: { fontFamily: fonts.bold, fontSize: 28, textAlign: 'center', marginBottom: 16 },
-    lessonDescription: { fontFamily: fonts.regular, fontSize: 16, color: '#666666', textAlign: 'center', lineHeight: 24, marginBottom: 32, paddingHorizontal: 16 },
-    infoCard: {
-        width: '100%',
-        padding: 20,
-        borderRadius: 16,
-        borderWidth: 1,
-        gap: 12,
-    },
+    lessonTitle: { fontFamily: fonts.bold, fontSize: 28, textAlign: 'center', marginBottom: 24 },
+    infoCard: { width: '100%', padding: 20, borderRadius: 16, borderWidth: 1, gap: 12 },
     infoText: { fontFamily: fonts.medium, fontSize: 16 },
-
     footer: { padding: 24, paddingBottom: 40 },
-    startButton: {
-        paddingVertical: 18,
-        borderRadius: 100,
-        alignItems: 'center',
-        shadowColor: '#2E7D32',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 6,
-    },
-    startButtonText: { fontFamily: fonts.bold, fontSize: 20, color: '#FFFFFF' },
 });
