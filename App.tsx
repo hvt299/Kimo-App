@@ -11,6 +11,7 @@ import LessonScreen from './src/screens/LessonScreen';
 import UtilitiesScreen from './src/screens/UtilitiesScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import LevelDetailScreen from './src/screens/LevelDetailScreen';
+import InteractiveLessonScreen from './src/screens/InteractiveLessonScreen';
 import { lightTheme, darkTheme } from './src/theme/colors';
 import { fonts } from './src/theme/fonts';
 
@@ -23,6 +24,7 @@ function HomeStackNavigator() {
       <Stack.Screen name="HomeScreen" component={HomeScreen} />
       <Stack.Screen name="LevelDetail" component={LevelDetailScreen} />
       <Stack.Screen name="Lesson" component={LessonScreen} />
+      <Stack.Screen name="InteractiveLesson" component={InteractiveLessonScreen} />
     </Stack.Navigator>
   );
 }

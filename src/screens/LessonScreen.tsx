@@ -1,85 +1,47 @@
-import { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, PanResponder, Image } from 'react-native';
+import { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTheme } from '@react-navigation/native';
-import { ArrowLeft, Hand, ArrowRight, ArrowLeft as ArrowLeftIcon, ArrowUp, ArrowDown } from 'lucide-react-native';
+import { useTheme, useFocusEffect } from '@react-navigation/native';
+import { ArrowLeft, CheckCircle2, Circle } from 'lucide-react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fonts } from '../theme/fonts';
 import KimoButton from '../components/KimoButton';
-import KimoMascot from '../components/KimoMascot';
 import { LESSON_DATA } from '../data/lessons';
-import { saveLessonProgress } from '../utils/storage';
 
 export default function LessonScreen({ navigation, route }: any) {
     const { colors } = useTheme();
     const { lessonId, title } = route.params;
     const lesson = LESSON_DATA[lessonId];
 
-    const [currentStepIndex, setCurrentStepIndex] = useState(0);
-    const [isSuccess, setIsSuccess] = useState(false);
-    const [attempts, setAttempts] = useState(0);
+    const [isCompleted, setIsCompleted] = useState(false);
 
-    const opacityAnim = useRef(new Animated.Value(1)).current;
-    const currentStep = lesson?.steps[currentStepIndex];
-    const isLastStep = lesson ? currentStepIndex === lesson.steps.length - 1 : true;
+    // Load lại trạng thái xem bài học đã hoàn thành chưa mỗi khi màn hình hiển thị
+    useFocusEffect(
+        useCallback(() => {
+            const loadProgress = async () => {
+                try {
+                    const existingData = await AsyncStorage.getItem('@kimo_progress');
+                    if (existingData) {
+                        const progress = JSON.parse(existingData);
+                        if (progress[lessonId]?.completed) setIsCompleted(true);
+                    }
+                } catch (error) {
+                    console.error('Lỗi khi tải tiến trình:', error);
+                }
+            };
+            loadProgress();
+        }, [lessonId])
+    );
 
-    const panResponder = useRef(
-        PanResponder.create({
-            onStartShouldSetPanResponder: () => true,
-            onPanResponderRelease: (evt, gestureState) => {
-                const { dx, dy } = gestureState;
-                if (!currentStep) return;
-
-                if (currentStep.type === 'swipe_right' && dx > 50) handleStepSuccess();
-                if (currentStep.type === 'swipe_left' && dx < -50) handleStepSuccess();
-                if (currentStep.type === 'swipe_down' && dy > 50) handleStepSuccess();
-                if (currentStep.type === 'swipe_up' && dy < -50) handleStepSuccess();
-            },
-        })
-    ).current;
-
-    useEffect(() => {
-        setIsSuccess(false);
-        Animated.timing(opacityAnim, { toValue: 1, duration: 300, useNativeDriver: true }).start();
-    }, [currentStepIndex, opacityAnim]);
-
-    if (!lesson || !currentStep) {
+    if (!lesson) {
         return (
-            <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background, justifyContent: 'center', padding: 24 }]}>
+            <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background, padding: 24, justifyContent: 'center' }]}>
                 <Text style={[styles.errorTitle, { color: colors.text }]}>{title}</Text>
                 <Text style={styles.errorText}>Bài học này đang được Kimo xây dựng và sẽ sớm ra mắt nhé!</Text>
-                <KimoButton title="Quay lại màn hình chính" onPress={() => navigation.goBack()} />
+                <KimoButton title="Quay lại" onPress={() => navigation.goBack()} />
             </SafeAreaView>
         );
     }
-
-    const handleStepSuccess = () => {
-        setIsSuccess(true);
-    };
-
-    const handleNext = async () => {
-        if (isLastStep) {
-            await saveLessonProgress(lessonId, attempts + 1, true);
-            navigation.goBack();
-        } else {
-            setAttempts(attempts + 1);
-            Animated.timing(opacityAnim, { toValue: 0, duration: 200, useNativeDriver: true }).start(() => {
-                setCurrentStepIndex(prev => prev + 1);
-            });
-        }
-    };
-
-    const renderSwipeIcon = (type: string) => {
-        switch (type) {
-            case 'swipe_left': return <ArrowLeftIcon color="#FFFFFF" size={32} />;
-            case 'swipe_up': return <ArrowUp color="#FFFFFF" size={32} />;
-            case 'swipe_down': return <ArrowDown color="#FFFFFF" size={32} />;
-            default: return <ArrowRight color="#FFFFFF" size={32} />;
-        }
-    };
-
-    const swipeText = currentStep.type.includes('right') ? 'Vuốt sang phải' :
-        currentStep.type.includes('left') ? 'Vuốt sang trái' :
-            currentStep.type.includes('up') ? 'Vuốt lên trên' : 'Vuốt xuống dưới';
 
     return (
         <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
@@ -87,80 +49,72 @@ export default function LessonScreen({ navigation, route }: any) {
                 <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backButton, { backgroundColor: colors.card, borderColor: colors.border }]}>
                     <ArrowLeft color={colors.text} size={24} />
                 </TouchableOpacity>
-                <Text style={[styles.headerTitle, { color: colors.text }]}>Bước {currentStepIndex + 1}/{lesson.steps.length}</Text>
+                <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>{title}</Text>
                 <View style={styles.placeholder} />
             </View>
 
-            <Animated.View style={[styles.content, { opacity: opacityAnim }]}>
+            <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+                <Text style={[styles.description, { color: colors.text }]}>{lesson.description}</Text>
 
-                <View style={styles.badgeWrapper}>
-                    <View style={[styles.stepBadge, { backgroundColor: currentStep.type === 'info' ? '#E3F2FD' : '#FFF3E0' }]}>
-                        <Text style={[styles.stepBadgeText, { color: currentStep.type === 'info' ? '#1976D2' : '#F57C00' }]}>
-                            {currentStep.type === 'info' ? 'LÝ THUYẾT' : 'THỰC HÀNH'}
-                        </Text>
-                    </View>
-                </View>
-
-                <KimoMascot message={isSuccess ? (currentStep.successMessage || 'Tuyệt vời!') : currentStep.instruction} />
-
-                <View style={styles.interactiveArea}>
-
-                    {currentStep.imageUrl && (
-                        <Image source={typeof currentStep.imageUrl === 'string' ? { uri: currentStep.imageUrl } : currentStep.imageUrl} style={styles.mediaFrame} resizeMode="contain" />
-                    )}
-                    {currentStep.videoUrl && (
-                        <View style={[styles.mediaFrame, styles.videoPlaceholder, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                            <Text style={styles.videoText}>[Video minh họa sẽ tải ở đây]</Text>
-                        </View>
-                    )}
-
-                    {!isSuccess ? (
-                        <View style={styles.actionContainer}>
-                            {currentStep.type === 'info' && (
-                                <KimoButton title="Đã hiểu, tiếp tục" onPress={handleStepSuccess} />
-                            )}
-                            {currentStep.type === 'tap' && (
-                                <TouchableOpacity style={[styles.tapTarget, { backgroundColor: colors.primary }]} onPress={handleStepSuccess} activeOpacity={0.7}>
-                                    <Hand color="#FFFFFF" size={40} />
-                                </TouchableOpacity>
-                            )}
-                            {currentStep.type.startsWith('swipe') && (
-                                <View style={[styles.swipeTrack, { backgroundColor: colors.border }]} {...panResponder.panHandlers}>
-                                    <View style={[styles.swipeThumb, { backgroundColor: colors.primary }]}>
-                                        {renderSwipeIcon(currentStep.type)}
-                                    </View>
-                                    <Text style={styles.swipeText}>{swipeText}</Text>
+                <View style={styles.timelineContainer}>
+                    {lesson.steps.map((step, index) => {
+                        const isLast = index === lesson.steps.length - 1;
+                        return (
+                            <View key={step.id} style={styles.timelineRow}>
+                                <View style={styles.timelineIconColumn}>
+                                    {isCompleted ? (
+                                        <CheckCircle2 color="#4CAF50" size={28} />
+                                    ) : (
+                                        <View style={[styles.circleNumber, { backgroundColor: colors.primary }]}>
+                                            <Text style={styles.circleNumberText}>{index + 1}</Text>
+                                        </View>
+                                    )}
+                                    {!isLast && <View style={[styles.timelineLine, { backgroundColor: isCompleted ? '#4CAF50' : colors.border }]} />}
                                 </View>
-                            )}
-                        </View>
-                    ) : (
-                        <KimoButton title={isLastStep ? "Hoàn thành bài học" : "Bước tiếp theo"} onPress={handleNext} />
-                    )}
+
+                                <View style={[styles.timelineContent, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                                    <Text style={[styles.stepType, { color: step.type === 'info' ? '#1976D2' : '#F57C00' }]}>
+                                        {step.type === 'info' ? 'LÝ THUYẾT' : 'THỰC HÀNH'}
+                                    </Text>
+                                    <Text style={[styles.stepInstruction, { color: colors.text }]}>{step.instruction}</Text>
+                                </View>
+                            </View>
+                        );
+                    })}
                 </View>
-            </Animated.View>
+            </ScrollView>
+
+            <View style={[styles.footer, { backgroundColor: colors.background }]}>
+                <KimoButton
+                    title={isCompleted ? "Ôn tập lại từ đầu" : "Bắt đầu học ngay"}
+                    onPress={() => navigation.navigate('InteractiveLesson', { lessonId, title })}
+                />
+            </View>
         </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
     safeArea: { flex: 1 },
-    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, paddingTop: 16, paddingBottom: 16 },
-    backButton: { width: 48, height: 48, borderRadius: 24, justifyContent: 'center', alignItems: 'center', borderWidth: 1 },
-    headerTitle: { fontFamily: fonts.bold, fontSize: 18 },
+    header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 24, paddingTop: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: '#E5E5E5' },
+    backButton: { width: 48, height: 48, borderRadius: 24, justifyContent: 'center', alignItems: 'center', borderWidth: 1, marginRight: 16 },
+    headerTitle: { flex: 1, fontFamily: fonts.bold, fontSize: 20 },
     placeholder: { width: 48 },
-    content: { flex: 1, padding: 24 },
+    scrollContainer: { padding: 24, paddingBottom: 40 },
+    description: { fontFamily: fonts.regular, fontSize: 16, marginBottom: 32, lineHeight: 24, color: '#666666' },
     errorTitle: { fontFamily: fonts.bold, fontSize: 24, textAlign: 'center', marginBottom: 16 },
     errorText: { fontFamily: fonts.regular, fontSize: 16, color: '#666666', textAlign: 'center', marginBottom: 32, lineHeight: 24 },
-    interactiveArea: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    actionContainer: { width: '100%', alignItems: 'center' },
-    tapTarget: { width: 120, height: 120, borderRadius: 60, justifyContent: 'center', alignItems: 'center', shadowColor: '#2E7D32', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8 },
-    swipeTrack: { width: '100%', height: 80, borderRadius: 40, flexDirection: 'row', alignItems: 'center', padding: 8 },
-    swipeThumb: { width: 64, height: 64, borderRadius: 32, justifyContent: 'center', alignItems: 'center', zIndex: 2 },
-    swipeText: { flex: 1, textAlign: 'center', fontFamily: fonts.medium, fontSize: 18, color: '#666666', marginLeft: -64 },
-    mediaFrame: { width: '100%', height: 200, borderRadius: 16, marginBottom: 24 },
-    videoPlaceholder: { borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
-    videoText: { fontFamily: fonts.regular, color: '#999999' },
-    badgeWrapper: { alignItems: 'flex-start', marginBottom: 12 },
-    stepBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 100 },
-    stepBadgeText: { fontFamily: fonts.bold, fontSize: 12, letterSpacing: 1 },
+
+    timelineContainer: { marginTop: 8 },
+    timelineRow: { flexDirection: 'row', marginBottom: 16 },
+    timelineIconColumn: { alignItems: 'center', width: 32, marginRight: 16 },
+    circleNumber: { width: 28, height: 28, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
+    circleNumberText: { fontFamily: fonts.bold, color: '#FFFFFF', fontSize: 14 },
+    timelineLine: { width: 2, flex: 1, marginTop: 8, marginBottom: 8, borderRadius: 1 },
+
+    timelineContent: { flex: 1, padding: 16, borderRadius: 16, borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },
+    stepType: { fontFamily: fonts.bold, fontSize: 12, marginBottom: 8, letterSpacing: 0.5 },
+    stepInstruction: { fontFamily: fonts.medium, fontSize: 15, lineHeight: 22 },
+
+    footer: { padding: 24, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#E5E5E5' },
 });
