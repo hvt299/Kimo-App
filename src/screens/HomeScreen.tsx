@@ -1,21 +1,20 @@
-import { useEffect, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, StatusBar, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTheme } from '@react-navigation/native';
-import { Pointer, Phone, Camera, Award } from 'lucide-react-native';
+import { useTheme, useFocusEffect } from '@react-navigation/native';
+import { Award } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fonts } from '../theme/fonts';
 import ProgressBar from '../components/ProgressBar';
 import LessonCard from '../components/LessonCard';
-
-const LESSON_CATEGORIES = [
-    { id: 'touch_swipe', title: 'Làm quen màn hình', subtitle: 'Học cách chạm, vuốt và thu phóng', Icon: Pointer },
-    { id: 'call', title: 'Gọi điện thoại', subtitle: 'Lưu danh bạ, nghe và gọi', Icon: Phone },
-    { id: 'camera', title: 'Chụp ảnh & Thư viện', subtitle: 'Cách lưu giữ kỷ niệm', Icon: Camera },
-];
+import { CURRICULUM, TOTAL_LESSONS } from '../data/curriculum';
 
 export default function HomeScreen({ navigation }: any) {
     const { colors } = useTheme();
+    const [progressData, setProgressData] = useState<Record<string, any>>({});
+    const [completedCount, setCompletedCount] = useState(0);
+
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const slideAnim = useRef(new Animated.Value(30)).current;
 
@@ -24,7 +23,28 @@ export default function HomeScreen({ navigation }: any) {
             Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
             Animated.spring(slideAnim, { toValue: 0, tension: 50, friction: 7, useNativeDriver: true })
         ]).start();
-    }, []);
+    }, [fadeAnim, slideAnim]);
+
+    useFocusEffect(
+        useCallback(() => {
+            const loadProgress = async () => {
+                try {
+                    const existingData = await AsyncStorage.getItem('@kimo_progress');
+                    if (existingData) {
+                        const progress = JSON.parse(existingData);
+                        setProgressData(progress);
+                        const count = Object.values(progress).filter((item: any) => item.completed).length;
+                        setCompletedCount(count);
+                    }
+                } catch (error) {
+                    console.error('Lỗi khi tải tiến trình:', error);
+                }
+            };
+            loadProgress();
+        }, [])
+    );
+
+    const progressPercentage = TOTAL_LESSONS > 0 ? (completedCount / TOTAL_LESSONS) * 100 : 0;
 
     return (
         <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
@@ -41,31 +61,32 @@ export default function HomeScreen({ navigation }: any) {
                         <View style={styles.progressHeader}>
                             <View>
                                 <Text style={styles.progressTitle}>Tiến độ của bác</Text>
-                                <Text style={styles.progressSubtitle}>Đã hoàn thành 0/15 bài học</Text>
+                                <Text style={styles.progressSubtitle}>Đã hoàn thành {completedCount}/{TOTAL_LESSONS} bài học</Text>
                             </View>
                             <View style={styles.badgeContainer}>
                                 <Award color="#2E7D32" size={28} />
                             </View>
                         </View>
-                        {/* Sử dụng Component ProgressBar đã tái cấu trúc */}
-                        <ProgressBar progress={5} trackColor="rgba(255,255,255,0.3)" fillColor="#FFFFFF" />
+                        <ProgressBar progress={progressPercentage} trackColor="rgba(255,255,255,0.3)" fillColor="#FFFFFF" />
                     </LinearGradient>
 
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Hôm nay bác muốn học gì?</Text>
-
-                    <View style={styles.listContainer}>
-                        {LESSON_CATEGORIES.map((category) => (
-                            <Animated.View key={category.id} style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
-                                {/* Sử dụng LessonCard */}
-                                <LessonCard
-                                    title={category.title}
-                                    subtitle={category.subtitle}
-                                    Icon={category.Icon}
-                                    onPress={() => navigation.navigate('Lesson', { lessonId: category.id, title: category.title })}
-                                />
-                            </Animated.View>
-                        ))}
-                    </View>
+                    {CURRICULUM.map((level) => (
+                        <View key={level.levelId} style={styles.levelSection}>
+                            <Text style={[styles.levelTitle, { color: colors.text }]}>{level.levelTitle}</Text>
+                            <View style={styles.listContainer}>
+                                {level.lessons.map((lesson) => (
+                                    <LessonCard
+                                        key={lesson.id}
+                                        title={lesson.title}
+                                        subtitle={lesson.subtitle}
+                                        Icon={lesson.Icon}
+                                        isCompleted={progressData[lesson.id]?.completed}
+                                        onPress={() => navigation.navigate('Lesson', { lessonId: lesson.id, title: lesson.title })}
+                                    />
+                                ))}
+                            </View>
+                        </View>
+                    ))}
                 </Animated.View>
 
             </ScrollView>
@@ -87,6 +108,7 @@ const styles = StyleSheet.create({
     progressTitle: { fontFamily: fonts.bold, fontSize: 20, color: '#FFFFFF', marginBottom: 4 },
     progressSubtitle: { fontFamily: fonts.medium, fontSize: 14, color: '#E8F5E9' },
     badgeContainer: { backgroundColor: '#FFFFFF', padding: 10, borderRadius: 16 },
-    sectionTitle: { fontFamily: fonts.bold, fontSize: 22, marginBottom: 16 },
-    listContainer: { gap: 16 },
+    levelSection: { marginBottom: 32 },
+    levelTitle: { fontFamily: fonts.bold, fontSize: 20, marginBottom: 16 },
+    listContainer: { gap: 12 },
 });
